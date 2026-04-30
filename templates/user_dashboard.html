@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FindMyStuff – User Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-page">
+<!-- Flash messages container -->
+<div id="flash-messages">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
+
+  <!-- Main Dashboard Container -->
+  <div id="dashboard-container" class="dashboard-container">
+
+    <h1>📦 FindMyStuff – User Dashboard</h1>
+    <p class="lead">Lost Something? <span class="highlight">We'll Help You Find It</span></p>
+    <p class="lead">Connect lost items with their owners through our digital lost & found system. Report what you've lost or found, and help reunite belongings with their rightful owners.</p>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card">
+       <h2 id="lostCount">{{ lost_count }}</h2>
+        <p>Lost Items</p>
+      </div>
+      <div class="stat-card">
+      <h2 id="foundCount">{{ found_count }}</h2>
+        <p>Found Items</p>
+      </div>
+      <div class="stat-card">
+<h2 id="reunitedCount">{{ claims_count }}</h2>
+        <p>Reunited</p>
+      </div>
+      <div class="stat-card">
+        <h2 id="totalCount">{{ total_count }}</h2>
+
+        <p>Total Reports</p>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions">
+      <button type="button" onclick="openModal('lost')">➕ Report Lost Item</button>
+      <button type="button" onclick="openModal('found')">📢 Report Found Item</button>
+      <button onclick="showSection('browse')">🔍 Browse Items</button>
+      <button onclick="showSection('myClaims')">📄 My Claims</button> <!-- Add this -->
+
+
+
+      
+
+
+    </div>
+
+    <!-- How it Works -->
+    <div class="how-it-works-bottom">
+      <h1>How it works</h1>
+      <div class="steps-horizontal">
+        <div class="step">
+          <div class="icon">➕</div>
+          <h3>Report</h3>
+          <p>Report your lost or found item with details like category, description, and location.</p>
+        </div>
+        <div class="step">
+          <div class="icon">🔍</div>
+          <h3>Browse</h3>
+          <p>Browse through reported items to find matches or check if someone found your item.</p>
+        </div>
+        <div class="step">
+          <div class="icon">🔗</div>
+          <h3>Connect</h3>
+          <p>Connect directly with the reporter using the provided contact information.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Modal -->
+<div id="reportModal" class="modal">
+  <div class="modal-content">
+    <!-- Close Button -->
+    <span class="close" onclick="closeModal()">&times;</span>
+
+    <!-- Lost / Found Tab Buttons -->
+    <div class="tab-buttons">
+      <button id="lostTab" class="lost" onclick="switchTab('lost')">Report Lost Item</button>
+      <button id="foundTab" class="found" onclick="switchTab('found')">Report Found Item</button>
+    </div>
+
+    <!-- Title controlled by JS -->
+    <h2 id="formTitle">Report Lost Item</h2>
+
+    <!-- Report Form -->
+<form id="reportForm" method="POST" action="/report-item" enctype="multipart/form-data">
+
+  <input type="hidden" name="kind" id="itemKind" value="Lost">
+  
+  <div class="form-section">
+    <label for="title">Title *</label>
+    <input type="text" name="title" id="title" required>
+  </div>
+
+  <div class="form-section">
+    <label for="category">Category *</label>
+    <select name="category" id="category" required>
+      <option value="">Select category</option>
+      <option value="Electronics">Electronics</option>
+      <option value="Clothing">Clothing</option>
+      <option value="Books">Books</option>
+      <option value="Accessories">Accessories</option>
+      <option value="Other">Other</option>
+    </select>
+  </div>
+
+
+
+      <div class="form-section">
+        <label for="date">Date *</label>
+        <input type="date" id="date" name="date" required>
+      </div>
+      <div class="form-section">
+  <label for="contact_email">Email (private, for admin)</label>
+  <input type="email" name="contact_email" id="contact_email" required>
+</div>
+
+<div class="form-section">
+  <label for="contact_phone">Phone Number (private, for admin)</label>
+  <input type="text" name="contact_phone" id="contact_phone" required>
+</div>
+
+  <div class="form-section">
+    <label for="description">Description *</label>
+    <textarea name="description" id="description" required></textarea>
+  </div>
+
+  <div class="form-section">
+    <label for="location">Location *</label>
+    <input type="text" name="location" id="location" required>
+  </div>
+    <div class="form-section">
+        <label for="image">Image (optional)</label>
+        <input type="file" id="image" name="image">
+      </div>
+
+  <div class="form-actions">
+    <button type="submit" class="submit">Submit</button>
+    <button type="button" class="cancel" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+</div>
+</form>
+
+
+   
+
+ 
+
+
+
+<section id="myClaims" class="view">
+  <h2>📄 My Claims</h2>
+  <table class="claims-table">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Status</th>
+        <th>Admin Message</th>
+        <th>User Reply</th>
+        <th>Contact Info</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if user_claims %}
+        {% for claim in user_claims %}
+        <tr>
+          <td>{{ claim['title'] }}</td>
+
+          <td>
+            {% if claim['claim_status'] == 'Approved' %}
+              <span class="status approved">{{ claim['claim_status'] }}</span>
+            {% elif claim['claim_status'] == 'Rejected' %}
+              <span class="status rejected">{{ claim['claim_status'] }}</span>
+            {% elif claim['claim_status'] == 'Need Info' %}
+              <span class="status need-info">{{ claim['claim_status'] }}</span>
+            {% else %}
+              <span class="status pending">{{ claim['claim_status'] }}</span>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if claim['message'] %}
+              <span class="admin-message">{{ claim['message'] }}</span>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+
+          <td>
+            {% if claim['user_reply'] %}
+              <span class="user-reply">{{ claim['user_reply'] }}</span>
+            {% else %}
+              {% if claim['claim_status'] == 'Need Info' %}
+                <button class="reply-btn" data-claim-id="{{ claim['id'] }}">Reply</button>
+              {% else %}
+                -
+              {% endif %}
+            {% endif %}
+          </td>
+
+          <td>
+            {% if claim['claim_status'] == 'Approved' %}
+              {{ claim['contact_email'] }} / {{ claim['contact_phone'] }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="5" style="text-align:center;">No claims yet.</td>
+        </tr>
+      {% endif %}
+      <button id="backFromMyClaims" class="back-btn">Back to Dashboard</button>
+
+    </tbody>
+  </table>
+</section>
+
+<!-- Reply Modal -->
+<section id="replyModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="closeReplyModal">&times;</span>
+    <h2>Reply to Admin</h2>
+    <form id="replyForm" method="POST" action="/submit-reply">
+      <input type="hidden" name="claim_id" id="replyClaimId">
+      <div class="form-section">
+        <label for="userReply">Your Reply *</label>
+        <textarea name="replyMessage" id="userReply" required></textarea>
+
+      </div>
+      <div class="form-actions">
+        <button type="button" id="cancelReply" class="cancel-btn">Cancel</button>
+        <button type="submit">Send Reply</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+
+  <!-- Browse Section -->
+  <section id="browse" class="view">
+  <h1>🔍 Browse Items</h1>
+  <div class="actions">
+    <input type="text" id="searchBox" placeholder="Search items..." onkeyup="filterItems()">
+    <select id="categoryFilter" onchange="filterItems()">
+      <option value="">All Categories</option>
+       <option value="Electronics">Electronics</option>
+  <option value="Clothing">Clothing</option>
+  <option value="Books">Books</option>
+  <option value="Accessories">Accessories</option>
+  <option value="Other">Other</option>
+    </select>
+   <button onclick="showSection('dashboard-container')">⬅ Back</button>
+
+
+  </div>
+
+<div id="itemsGrid">
+  {% for item in items %}
+  <div class="step" 
+       data-category="{{ item['category'] }}" 
+       data-title="{{ item['title'] }}" 
+       data-description="{{ item['description'] }}" 
+       data-location="{{ item['location'] }}">
+    
+    <h3>{{ item['title'] }}</h3>
+
+    {% if item['image'] %}
+      <!-- Show uploaded image -->
+      <img src="{{ url_for('static', filename='uploads/' + item['image']) }}" 
+           alt="Item Image"
+           style="width: 150px; height: 150px; object-fit: cover; border-radius: 10px; margin-bottom: 8px;">
+    {% else %}
+      <!-- Show default image if no image uploaded -->
+      <img src="{{ url_for('static', filename='uploads/default.png') }}" 
+           alt="No Image Available"
+           style="width: 150px; height: 150px; object-fit: cover; border-radius: 10px; margin-bottom: 8px;">
+    {% endif %}
+
+    <p><b>Kind:</b> {{ item['kind'] }}</p>
+    <p><b>Location:</b> {{ item['location'] }}</p>
+    <p><b>Description:</b> {{ item['description'] }}</p>
+
+    <button type="button" class="claim-btn"
+      data-item-id="{{ item['id'] }}"
+      data-item-title="{{ item['title'] }}"
+      data-item-description="{{ item['description'] }}"
+      data-item-location="{{ item['location'] }}">
+      📝 Claim This Item
+    </button>
+  </div>
+  {% else %}
+  <p>No items reported yet.</p>
+  {% endfor %}
+</div>
+
+
+
+
+</section>
+
+<section id="claimSection" class="view">
+  <div class="modal-content">
+    <h2>📑 Claim Item</h2>
+    <form id="claimForm" method="POST" action="/submit-claim">
+      <input type="hidden" name="item_id" id="claimItemId">
+      <div class="form-section">
+        <p><strong>Item Title:</strong> <span id="claimItemTitle"></span></p>
+        <p><strong>Description:</strong> <span id="claimItemDescription"></span></p>
+        <p><strong>Location:</strong> <span id="claimItemLocation"></span></p>
+      </div>
+
+      <div class="form-section">
+        <label for="message">Why is this yours? *</label>
+        <textarea name="message" id="message" placeholder="Explain why this is yours" required></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" id="backToBrowse" class="cancel-btn">Back</button>
+        <button type="submit" class="cancel">Submit Claim</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

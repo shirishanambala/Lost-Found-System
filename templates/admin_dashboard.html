@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FindMyStuff – Admin Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="admin-dashboard-page">
+  <section class="admin-dashboard">
+    <h1>🛡️ FindMyStuff – Admin Dashboard</h1>
+    <h2>Lost Something? We'll Help You Find It</h2>
+    <p class="subtitle">
+      Connect lost items with their owners through our digital lost & found system.
+      Review claims and help reunite belongings with their rightful owners.
+    </p>
+
+    <div class="claims-container">
+      <table class="claims-table">
+        <thead>
+  <tr>
+    <th>Claim ID</th>
+    <th>Item</th>
+    <th>Lost Report</th>
+    <th>Found Report</th>
+    <th>Claim Message</th>
+    <th>User Reply</th>  <!-- NEW -->
+    <th>Status</th>
+    <th>Actions</th>
+  </tr>
+</thead>
+<tbody>
+  {% if claims %}
+    {% for claim in claims %}
+    <tr>
+      <td>{{ claim['claim_id'] }}</td>
+      <td><strong>{{ claim['kind'] }}</strong>: {{ claim['title'] }}</td>
+
+      <td>
+        <strong>Category:</strong> {{ claim['lost_category'] }}<br>
+        <strong>Date:</strong> {{ claim['lost_date'] }}<br>
+        <strong>Description:</strong> {{ claim['lost_description'] }}<br>
+        <strong>Location:</strong> {{ claim['lost_location'] }}<br>
+        <strong>Contact Email:</strong> {{ claim['lost_contact_email'] }}<br>
+        <strong>Contact Phone:</strong> {{ claim['lost_contact_phone'] }}<br>
+        {% if claim['lost_image'] %}
+          <img src="{{ url_for('static', filename='uploads/' + claim['lost_image']) }}" 
+               alt="Item Image" style="width:80px; height:80px; object-fit:cover; border-radius:6px;">
+        {% else %}
+          <img src="{{ url_for('static', filename='uploads/default.png') }}" 
+               alt="No Image" style="width:80px; height:80px; object-fit:cover; border-radius:6px;">
+        {% endif %}
+      </td>
+
+      <td>
+        {% if claim['found_report'] %}
+          {{ claim['found_report'] }}
+        {% else %}
+          <em>No found report yet</em>
+        {% endif %}
+      </td>
+
+      <td>{{ claim['claim_message'] }}</td>
+      <td>{{ claim['user_reply'] or '-' }}</td>
+
+      <!-- Status -->
+      <td>
+  <span class="status 
+    {% if claim['status'] == 'Approved' %}approved{% endif %}
+    {% if claim['status'] == 'Rejected' %}rejected{% endif %}
+    {% if claim['status'] == 'Need Info' %}need-info{% endif %}
+    ">
+    {{ claim['status'] }}
+  </span>
+</td>
+
+
+      <!-- Actions -->
+      <td class="actions">
+        {% if claim['claim_id'] %}
+          <a href="{{ url_for('approve_claim', claim_id=claim['claim_id']) }}">
+              <button class="approve">Approve</button>
+          </a>
+          <a href="{{ url_for('reject_claim', claim_id=claim['claim_id']) }}">
+              <button class="reject">Reject</button>
+          </a>
+          <button class="info" data-claim-id="{{ claim['claim_id'] }}">Request Info</button>
+        {% else %}
+          <em>No actions</em>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  {% else %}
+    <tr>
+      <td colspan="8" style="text-align:center;">No claims yet.</td>
+    </tr>
+  {% endif %}
+</tbody>
+
+      </table>
+    </div>
+
+    <p class="note"><strong>Note:</strong> Contact info is visible only to admin. Users see only status updates.</p>
+  </section>
+
+  <!-- Request Info Modal -->
+  <div id="requestInfoModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('requestInfoModal')">&times;</span>
+      <h2>Request More Info</h2>
+      <form method="POST" action="/request-info">
+        <input type="hidden" name="claim_id" id="requestInfoClaimId">
+        <textarea name="message" placeholder="Ask user for more details" required></textarea>
+        <button type="submit">Send Request</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- No inline script needed, already in script.js -->
+
+</body>
+</html>
+
+
+
+
+
+
+
